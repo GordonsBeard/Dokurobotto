@@ -84,10 +84,9 @@ class DocRobot(bot.SimpleBot):
         logging.info("PM: {0}\t{1}".format(event.source, event.message))
         for command in commandlist:
             if re.search(command.regex, event.message.lower()):
-                retmessage = command.func(event)
+                retmessage = command.func(event = event)
                 if DEBUG: logging.debug("s:{0} t:{1} m:{2}".format(event.source, event.target, retmessage))
-                self.send_message(event.source, retmessage)
-
+                self.send_message(event.source, retmessage.default_response())
 
 # Log the quit and leave somewhat gracefully.
 def signal_handler(signal, frame):
