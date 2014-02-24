@@ -17,7 +17,7 @@ from ircutils import bot, ident, start_all
 
 # Load up the commands. Let's find a better way to do this though, ok?
 # Modules or something, I've heard of them. Look it up maybe?
-from plugins.youtube.youtube import YouTubeIdent
+from plugins.youtube.ident import YouTubeIdent
 
 command_list = [YouTubeIdent]
 regexes = [rx.regex for rx in command_list]
