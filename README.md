@@ -9,7 +9,13 @@ If docrobot.py is launched with `-d` this will enable DEBUG mode. More logging i
 
 * * *
 
-### Features
-#### Identifying YouTube URLs
-* INPUT:  http://www.youtube.com/watch?v=fHKEbyubuP0 or http://youtu.be/fHKEbyubuP0
-* OUTPUT: \*\*\* YouTube: What the Snackish special is (107")
+### Features / Plugins
+#### YouTube
+##### Identifying YouTube URLs
+```
+16:31 <@ docBeard> http://youtu.be/7lTOnPc9h-c
+16:31 <      DR-X> \*\*\* YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315")
+```
+
+##### Tests
+* Yes there are tests! `plugins/youtube/youtube_tests.py`
