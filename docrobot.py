@@ -8,92 +8,91 @@ VERSION = "1"
 
 # DR is brought to you in part by:
 import ConfigParser
-import logging, re, signal, sys
-from ircutils import bot, ident, start_all
+import imp, logging, os, re, signal, sys
 from time import strftime
 
-# If -d was passed in we are in debug mode.
-global DEBUG
-try:
-    if sys.argv[1] == "-d":
-        VERSION = "X"
-        DEBUG = True
-except IndexError:
-    DEBUG = False
+# And friends:
+from ircutils import bot, ident, start_all
+
+
+# Load up the commands. Let's find a better way to do this though, ok?
+# Modules or something, I've heard of them. Look it up maybe?
+from plugins.youtube.youtube import YouTubeIdent
+
+command_list = [YouTubeIdent]
+regexes = [rx.regex for rx in command_list]
 
 # Let's load stuff from the config file.
 Config = ConfigParser.ConfigParser()
 Config.read("settings.ini")
+
+# -d = debug mode.
+if "-d" in sys.argv or "--debug" in sys.argv:
+    VERSION = "X"
+    DEBUG = True
+else:
+    DEBUG = False
+
 
 BASENAME = Config.get("Bot", "NAME")
 NAME = "{0}-{1}".format(BASENAME, VERSION)
 
 SERVER = Config.get("Network", "ADDRESS")
 
-# Get the list of channels we'll be joining.
+# Get the list of channels DR will join.
 if DEBUG:
     CHANNELS = Config.get("Channels", "DEBUG")
 else:
     CHANNELS = Config.get("Channels", "CHANS")
 
-GOOGLEAPI = Config.get("API", "YOUTUBEKEY")
-
 # Open the log.
 logging.basicConfig(filename='robotlog.log', level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S')
 
-# What does DR respond to?
-commandlist = []
-
-class DRComm:
-    def __init__(self, func, regex, desc, command=None):
-        self.regex =  re.compile(regex)
-        self.func = func
-        self.desc = desc
-        self.command = command
-        commandlist.append(self)
-
-    def __repr__(self):
-        return "<Command('{0}', '{1}', '{2}', '{3}')>".format(self.func, self.regex, self.desc, self.command)
-
-#   TODO Load these in a more modular way.
-from youtube import YouTubeIdent
-YouTubeCom = DRComm(YouTubeIdent, YouTubeIdent.regex, YouTubeIdent.desc)
-
-
-# And now the star of our show, DR!
+# And now the star of our show!
 class DocRobot(bot.SimpleBot):
+    """DocRobot - the do-some-things IRC robot."""
+    def talkback(self, event, actualtarget):
+        for i, rx in enumerate(regexes):
+            if re.search(rx, event.message):
+                plugin_response = command_list[i](event)
+                # Plugins can respond with either
+                try:
+                    self.send_message(actualtarget, plugin_response.pretty)
+                except:
+                    if DEBUG: logging.debug("{0} for <{1}> {2}".format(plugin_response.pretty, event.source, event.message))
+
+
+    def on_join(self, event):
+        """On any channel join"""
+        pass
+
     def on_welcome(self, event):
+        """After MOTD/welcome message event"""
         for chan in CHANNELS.split(","):
-            logging.info("JOIN: #{0}".format(chan))
-            self.join("#"+chan)
-
-    def global_response(event):
-        print event.items()
-
-    def on_private_message(self, event):
-        print event.items()
+            logging.info("JOIN: {0}".format(chan))
+            self.join(chan)
 
     def on_channel_message(self, event):
-        for command in commandlist:
-            if re.search(command.regex, event.message.lower()):
-                retmessage = command.func(event = event)
-                if DEBUG: logging.debug("s:{0} t:{1} m:{2}".format(event.source, event.target, retmessage))
-                self.send_message(event.target, retmessage.default_response())
+        """On any public message on any channel"""
+        self.talkback(event, event.target)
 
     def on_private_message(self, event):
-        logging.info("PM: {0}\t{1}".format(event.source, event.message))
-        for command in commandlist:
-            if re.search(command.regex, event.message.lower()):
-                retmessage = command.func(event = event)
-                if DEBUG: logging.debug("s:{0} t:{1} m:{2}".format(event.source, event.target, retmessage))
-                self.send_message(event.source, retmessage.default_response())
+        """On any private message with DocRobot"""
+        self.talkback(event, event.source)
+
+    def goodbye(self, qmsg="ctrl-c"):
+        """Ensures an actual disconnection if possible."""
+        logging.info("good bye.")
+        logging.info("----------------------------------------------------------------")
+        docrobot.disconnect("ctrl-c")
+        sys.exit(0)
+
 
 # Log the quit and leave somewhat gracefully.
 def signal_handler(signal, frame):
+    """Capture ctrl-c terminations as noteable, but exit gracefuly."""
     logging.warning("Terminated by Console")
-    logging.info("-----------------------------------------------------------------------")
-    docrobot.disconnect("ctrl-c")
-    sys.exit(0)
+    docrobot.goodbye()
 
 signal.signal(signal.SIGINT, signal_handler)
 
@@ -104,6 +103,7 @@ if __name__ == "__main__":
     docrobot.connect(SERVER)
 
     # Setup the ident server, this reduces startup times by a lot.
+    # TODO: This doesn't seem to be working, investigate.
     identd = ident.IdentServer(port=1113)
 
     start_all()
