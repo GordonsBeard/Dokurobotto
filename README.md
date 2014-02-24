@@ -14,7 +14,7 @@ If docrobot.py is launched with `-d` this will enable DEBUG mode. More logging i
 ##### Identifying YouTube URLs
 ```
 16:31 <@ docBeard> http://youtu.be/7lTOnPc9h-c
-16:31 <      DR-X> \*\*\* YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315")
+16:31 <      DR-X> *** YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315")
 ```
 
 ##### Tests
