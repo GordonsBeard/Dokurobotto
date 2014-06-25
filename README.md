@@ -1,11 +1,7 @@
 Dokurobotto
 ===========
 
-Dokurobotto (Doc Robot) is an IRC bot that is used on GameSurge to do some unobtrusive robot stuff.
-
-## Setup
-Edit `settings_template.ini` and rename to `settings.ini`
-If docrobot.py is launched with `-d` this will enable DEBUG mode. More logging is included and it will join a seperate channel.
+Dokurobotto ([Doc Robot](http://megaman.wikia.com/wiki/Doc_Robot)) is an IRC bot that is used on GameSurge to do some unobtrusive robot stuff.
 
 * * *
 
@@ -17,5 +13,19 @@ If docrobot.py is launched with `-d` this will enable DEBUG mode. More logging i
 16:31 <      DR-X> \*\*\* YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315")
 ```
 
-##### Tests
-* Yes there are tests! `plugins/youtube/youtube_tests.py`
+##### Logging YouTube URLs
+If enabled, DR will tell you how many times we've all seen your dumb video.
+```
+16:31 <@ docBeard> http://youtu.be/7lTOnPc9h-c
+16:31 <      DR-X> \*\*\* YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315") (post 2)
+```
+
+* * *
+### History
+```
+DR-1:   YouTube plugin added.
+   1.0:     Identify YouTube links.
+   1.1:     Stores links in database.
+
+DR-0:   Joins channels. Not much else.
+```

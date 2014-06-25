@@ -1,4 +1,5 @@
 #!/usr/bin/python
+# -*- coding: utf-8 -*-
 
 # Welcome to Doc Robot, aka Dokurobotto K-176 aka DR
 # The do-some-things robot.
@@ -40,10 +41,7 @@ NAME = "{0}-{1}".format(BASENAME, VERSION)
 SERVER = Config.get("Network", "ADDRESS")
 
 # Get the list of channels DR will join.
-if DEBUG:
-    CHANNELS = Config.get("Channels", "DEBUG")
-else:
-    CHANNELS = Config.get("Channels", "CHANS")
+CHANNELS = Config.get("Channels", "DEBUG") if DEBUG else Config.get("Channels", "CHANS")
 
 # Open the log.
 logging.basicConfig(filename='robotlog.log', level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S')
