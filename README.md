@@ -10,7 +10,7 @@ Dokurobotto ([Doc Robot](http://megaman.wikia.com/wiki/Doc_Robot)) is an IRC bot
 ##### Identifying YouTube URLs
 ```
 16:31 <@ docBeard> http://youtu.be/7lTOnPc9h-c
-16:31 <      DR-X> \*\*\* YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315")
+16:31 <      DR-X> *** YouTube: MGS Peace Walker - Heavens Divide - HD+Lyrics (315")
 ```
 
 ##### Logging YouTube URLs
