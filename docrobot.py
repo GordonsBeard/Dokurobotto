@@ -5,43 +5,25 @@
 # The do-some-things robot.
 
 # This is the version number.
-VERSION = "1"
 
-# DR is brought to you in part by:
-import ConfigParser
-import imp, logging, os, re, signal, sys
+import config, imp, logging, os, re, signal, sys
 from time import strftime
 
 # And friends:
 from ircutils import bot, ident, start_all
 
+# DR's Modules are all in the plugins/ folder. This calls them all.
+from plugins.youtube.youtube import YouTubeIdent
 
-# Load up the commands. Let's find a better way to do this though, ok?
-# Modules or something, I've heard of them. Look it up maybe?
-from plugins.youtube.ident import YouTubeIdent
+# This will be active responses, !commands. Only one triggers.
+# Looks for matching regex in Command.regex
+active_command_list = []
+active_regexes = [rx.regex for rx in active_command_list] if active_command_list is not 0 else None
 
-command_list = [YouTubeIdent]
-regexes = [rx.regex for rx in command_list]
-
-# Let's load stuff from the config file.
-Config = ConfigParser.ConfigParser()
-Config.read("settings.ini")
-
-# -d = debug mode.
-if "-d" in sys.argv or "--debug" in sys.argv:
-    VERSION = "X"
-    DEBUG = True
-else:
-    DEBUG = False
-
-
-BASENAME = Config.get("Bot", "NAME")
-NAME = "{0}-{1}".format(BASENAME, VERSION)
-
-SERVER = Config.get("Network", "ADDRESS")
-
-# Get the list of channels DR will join.
-CHANNELS = Config.get("Channels", "DEBUG") if DEBUG else Config.get("Channels", "CHANS")
+# These are the passive commands, each one gets a look at the string.
+# Must have leinient regex to be picked up, or not. 
+passive_command_list = [YouTubeIdent]
+passive_regexes = [rx.regex for rx in passive_command_list]
 
 # Open the log.
 logging.basicConfig(filename='robotlog.log', level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S')
@@ -49,46 +31,72 @@ logging.basicConfig(filename='robotlog.log', level=logging.DEBUG, format='%(asct
 # And now the star of our show!
 class DocRobot(bot.SimpleBot):
     """DocRobot - the do-some-things IRC robot."""
-    def talkback(self, event, actualtarget):
-        for i, rx in enumerate(regexes):
+
+    def active_talkback(self, event, actualtarget):
+        """ One command, one message. """
+        if active_regexes is None: return
+        for i, rx in enumerate(active_regexes):
             if re.search(rx, event.message):
-                plugin_response = command_list[i](event)
-                # Plugins can respond with either
+                # Cycle through the active commands first.
+                # TODO set up order of operations for active commands?
+                plugin_response = active_command_list[i](event)
+                try:
+                    """ We call the plugin if the response matches.
+                     The plugin itself returns .pretty
+                     ex: YouTube.pretty = video_query_function()"""
+                    self.send_message(actualtarget, plugin_response.pretty)
+                except:
+                    # If this has some error and we're in debug, log it.
+                    # Otherwise fail silently? Hm.
+                    if DEBUG: logging.debug("** ERROR:\t{0} for <{1}> {2}".format(plugin_response.pretty, event.source, event.message))
+                return
+
+    def passive_talkback(self, event, actualtarget):
+        """ Multiple passive commands, one message. """
+        for i, rx in enumerate(passive_regexes):
+            if re.search(rx, event.message):
+                plugin_response = passive_command_list[i](event)
                 try:
                     self.send_message(actualtarget, plugin_response.pretty)
                 except:
-                    if DEBUG: logging.debug("{0} for <{1}> {2}".format(plugin_response.pretty, event.source, event.message))
-
+                    # If this has some error and we're in debug, log it.
+                    # Otherwise fail silently? Hm.
+                    if DEBUG: logging.debug("** ERROR:\t{0} for <{1}> {2}".format(plugin_response.pretty, event.source, event.message))
+            
 
     def on_join(self, event):
-        """On any channel join"""
+        """ Executes on any channel join. """
         pass
 
     def on_welcome(self, event):
-        """After MOTD/welcome message event"""
-        for chan in CHANNELS.split(","):
+        """ After MOTD/welcome message event """
+
+        # Join the channels.
+        for chan in config.CHANNELS.split(","):
             logging.info("JOIN: {0}".format(chan))
             self.join(chan)
 
     def on_channel_message(self, event):
-        """On any public message on any channel"""
-        self.talkback(event, event.target)
+        """ On any public message on any channel """
+        self.active_talkback(event, event.target)
+        self.passive_talkback(event, event.target)
 
     def on_private_message(self, event):
-        """On any private message with DocRobot"""
-        self.talkback(event, event.source)
+        """ On any private message with DocRobot """
+        self.active_talkback(event, event.source)
+        self.passive_talkback(event, event.source)
 
     def goodbye(self, qmsg="ctrl-c"):
-        """Ensures an actual disconnection if possible."""
-        logging.info("good bye.")
+        """ Ensures an actual disconnection if possible."""
+        logging.info(config.QUIT)
         logging.info("----------------------------------------------------------------")
-        docrobot.disconnect("ctrl-c")
+        docrobot.disconnect(config.QUIT)
         sys.exit(0)
 
 
 # Log the quit and leave somewhat gracefully.
 def signal_handler(signal, frame):
-    """Capture ctrl-c terminations as noteable, but exit gracefuly."""
+    """ Capture ctrl-c terminations as noteable, but exit gracefuly. """
     logging.warning("Terminated by Console")
     docrobot.goodbye()
 
@@ -96,9 +104,13 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Obligatory execution line
 if __name__ == "__main__":
-    logging.info("{0} connecting to {1}.".format(NAME, SERVER))
-    docrobot = DocRobot(NAME)
-    docrobot.connect(SERVER)
+    """ ./docrobot.py [-d] """
+    name = config.NAME
+    server = config.SERVER
+
+    logging.info("{0} connecting to {1}.".format(name, server))
+    docrobot = DocRobot(name)
+    docrobot.connect(server)
 
     # Setup the ident server, this reduces startup times by a lot.
     # TODO: This doesn't seem to be working, investigate.

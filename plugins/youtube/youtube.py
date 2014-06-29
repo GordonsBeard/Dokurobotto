@@ -21,7 +21,7 @@ conn = sqlite3.connect(config.DB_FILENAME)
 if config.DEBUG: print "Debug Mode, using database: {0}".format(config.DB_FILENAME)
 if db_is_new:
 
-    print "Need to create schema."
+    if config.DEBUG: print "Need to create schema."
 
     cursor = conn.cursor()
     cursor.execute('''
@@ -39,11 +39,13 @@ if db_is_new:
 
     try:
         conn.commit()
-        print "Empty database created."
+        if config.DEBUG: print "Empty database created."
     except sqlite3.Error:
-        print "Error creating database."
+        if config.DEBUG: print "Error creating database."
 
 conn.close()
+
+print "YouTube module loaded."
 
 # YouTube URL parser/identifier.
 class YouTubeIdent:
@@ -58,7 +60,7 @@ class YouTubeIdent:
     regex = re.compile("(?<=v(\=|\/))(?P<vid1>[-a-zA-Z0-9_]+)|(?<=youtu\.be\/)(?P<vid2>[-a-zA-Z0-9_]+)")
 
 
-    def __init__(self, event, log=True):
+    def __init__(self, event):
         self.message = event.message
         self.source = event.source
         self.target = event.target
@@ -68,7 +70,7 @@ class YouTubeIdent:
         rd = rd.groupdict()
         self.vidid = rd['vid1'] if rd['vid1'] else rd['vid2']
 
-        self.log = log
+        self.log = True if event.target[0] == "#" else False
 
         self.pretty = self.get_videoinfo()
 
@@ -93,13 +95,13 @@ class YouTubeIdent:
         videotitle = format.underline(soup.title.string)
         videotitle = format.bold(videotitle)
         duration = format.filter(' ({0}")'.format(vidsoup['duration']))
-        reposts = self.log_video() if self.log else None
+        reposts = self.get_view_count(self.log)
         repoststring = format.filter(' (post {0})'.format(reposts)) if reposts > 1 else ''
         videoinfo = youtubeprefix + videotitle + duration + repoststring
 
         return videoinfo.encode('utf-8')
 
-    def log_video(self):
+    def get_view_count(self, log):
         """ Take the video, give it +1 posts or stuff it into the database forever.
             Returns the number of posts the video has. """
         conn = sqlite3.connect(config.DB_FILENAME)
@@ -108,9 +110,13 @@ class YouTubeIdent:
         cursor.execute("SELECT posts from videos WHERE vidid = ?", (self.vidid,))
         data = cursor.fetchone()
 
-        if data is not None:
+        if data and log is False:
+            return data[0]
+
+        elif data is not None:
             posts = data[0] + 1
             cursor.execute("UPDATE videos SET posts = posts + 1 WHERE vidid = ?", (self.vidid,))
+
         else:
             posts = 1
             cursor.execute("INSERT INTO videos (vidid, posts, firstdate, firstsource, firsttarget, lastdate, lastsource, lasttarget) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (self.vidid, 1, datetime.datetime.now(), self.source, self.target, datetime.datetime.now(), self.source, self.target))
