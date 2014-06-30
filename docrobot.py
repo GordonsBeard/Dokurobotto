@@ -13,17 +13,18 @@ from time import strftime
 from ircutils import bot, ident, start_all
 
 # DR's Modules are all in the plugins/ folder. This calls them all.
-from plugins.youtube.youtube import YouTubeIdent
+from plugins.youtube.ident import YouTubeIdent
+from plugins.youtube.search import YouTubeSearch
 
 # This will be active responses, !commands. Only one triggers.
 # Looks for matching regex in Command.regex
-active_command_list = []
+active_command_list = [YouTubeSearch]
 active_regexes = [rx.regex for rx in active_command_list] if active_command_list is not 0 else None
 
 # These are the passive commands, each one gets a look at the string.
 # Must have leinient regex to be picked up, or not. 
 passive_command_list = [YouTubeIdent]
-passive_regexes = [rx.regex for rx in passive_command_list]
+passive_regexes = [rx.regex for rx in passive_command_list] if passive_command_list is not 0 else None
 
 # Open the log.
 logging.basicConfig(filename='robotlog.log', level=logging.DEBUG, format='%(asctime)s [%(levelname)s] %(message)s', datefmt='%m/%d %H:%M:%S')
@@ -39,29 +40,38 @@ class DocRobot(bot.SimpleBot):
             if re.search(rx, event.message):
                 # Cycle through the active commands first.
                 # TODO set up order of operations for active commands?
-                plugin_response = active_command_list[i](event)
-                try:
-                    """ We call the plugin if the response matches.
-                     The plugin itself returns .pretty
-                     ex: YouTube.pretty = video_query_function()"""
-                    self.send_message(actualtarget, plugin_response.pretty)
-                except:
-                    # If this has some error and we're in debug, log it.
-                    # Otherwise fail silently? Hm.
-                    if DEBUG: logging.debug("** ERROR:\t{0} for <{1}> {2}".format(plugin_response.pretty, event.source, event.message))
-                return
+                plugin_responses = active_command_list[i](event)
+                if plugin_responses.pretty is not None:
+                    try:
+                        """ We call the plugin if the response matches.
+                        The plugin itself returns a list of responses in .pretty
+                        ex: YouTubeSearch.pretty = ['youtu.be/video', 'title: video thing (post 3)']
+                        """
+                        for message in plugin_responses.pretty:
+                            self.send_message(actualtarget, message)
+                    except Exception, e:
+                        # If this has some error and we're in debug, log it.
+                        # Otherwise fail silently? Hm.
+                        print "NOPE"
+                        print e
+                        for message in plugin_responses.pretty:
+                            if config.DEBUG: logging.debug("** ERROR:\t{0} for <{1}> {2}".format(plugin_responses.pretty, event.source, event.message))
+                    return
 
     def passive_talkback(self, event, actualtarget):
         """ Multiple passive commands, one message. """
         for i, rx in enumerate(passive_regexes):
             if re.search(rx, event.message):
-                plugin_response = passive_command_list[i](event)
-                try:
-                    self.send_message(actualtarget, plugin_response.pretty)
-                except:
-                    # If this has some error and we're in debug, log it.
-                    # Otherwise fail silently? Hm.
-                    if DEBUG: logging.debug("** ERROR:\t{0} for <{1}> {2}".format(plugin_response.pretty, event.source, event.message))
+                plugin_responses = passive_command_list[i](event)
+                if plugin_responses.pretty is not None:
+                    try:
+                        for message in plugin_responses.pretty:
+                            self.send_message(actualtarget, message)
+                    except:
+                        # If this has some error and we're in debug, log it.
+                        # Otherwise fail silently? Hm.
+                        for message in plugin_responses.pretty:
+                            if config.DEBUG: logging.debug("** ERROR:\t{0} for <{1}> {2}".format(message, event.source, event.message))
             
 
     def on_join(self, event):

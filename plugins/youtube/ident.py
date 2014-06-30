@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
 """
-This is DR's YouTube module.
+This is the YouTube identify module.
 Features:
     - YouTubeIdent
         * log = True, set to False for PMs?
@@ -49,12 +49,7 @@ print "YouTube module loaded."
 
 # YouTube URL parser/identifier.
 class YouTubeIdent:
-    """ Class for containg the YouTube message and it's chat-friendly translation.
-    Returns obj.message: the triggering message
-            obj.source: the source of the triggering message
-            obj.target: the target of the triggering message
-            obj.pretty: the pretty string that's sent to chat
-            obj.vidid: the video id """
+    """ Class for containg the YouTube message and it's chat-friendly translation. """
 
     # Magic regex to pull out youtu.be/<vidid> or youtube.com/v?=<vidid>
     regex = re.compile("(?<=v(\=|\/))(?P<vid1>[-a-zA-Z0-9_]+)|(?<=youtu\.be\/)(?P<vid2>[-a-zA-Z0-9_]+)")
@@ -72,7 +67,7 @@ class YouTubeIdent:
 
         self.log = True if event.target[0] == "#" else False
 
-        self.pretty = self.get_videoinfo()
+        self.pretty = [self.get_videoinfo(),]
 
 
     def get_videoinfo(self):
@@ -124,4 +119,3 @@ class YouTubeIdent:
         conn.commit()
         conn.close()
         return posts
-

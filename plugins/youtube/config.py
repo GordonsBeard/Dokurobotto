@@ -3,7 +3,7 @@
 """
 Configuration stuff for the YouTube module.
 """
-import sys
+import ConfigParser, sys
 
 # Database names, edit these if you want.
 default_name = 'videos.db'
@@ -16,6 +16,16 @@ if "-d" in sys.argv or "--debug" in sys.argv:
     DEBUG = True
 else:
     DEBUG = False
+
+# Let's load stuff from the config file.
+Config = ConfigParser.ConfigParser()
+Config.read("plugins/youtube/youtube_settings.ini")
+
+try:
+    YOUTUBEKEY = Config.get("API", "YOUTUBEKEY")
+except ConfigParser.NoSectionError:
+    Config.read("youtube_settings.ini")
+    YOUTUBEKEY = Config.get("API", "YOUTUBEKEY")
 
 # Set database constant.
 DB_FILENAME = debug_name if DEBUG else default_name

@@ -25,3 +25,4 @@ SERVER = Config.get("Network", "ADDRESS")
 CHANNELS = Config.get("Channels", "DEBUG") if DEBUG else Config.get("Channels", "CHANS")
 
 QUIT = Config.get("Bot", "QUIT")
+
