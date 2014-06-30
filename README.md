@@ -21,7 +21,7 @@ When in a private message, identifying a URL will not increase the post count.
       < DR-X> *** YouTube: It's not spam (56") (post 77)
 ```
 
-#### Searching YouTube
+##### Searching YouTube
 Allows users to search YouTube via keyword, one result.
 Multiple-word queries need to be wrapped in "quotation marks"
 ```
