@@ -4,8 +4,6 @@
 # Welcome to Doc Robot, aka Dokurobotto K-176 aka DR
 # The do-some-things robot.
 
-# This is the version number.
-
 import config, imp, logging, os, re, signal, sys
 from time import strftime
 
